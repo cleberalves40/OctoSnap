@@ -15,6 +15,14 @@ jobs:
     steps:
     - uses: actions/checkout@v5
 
+    - name: Check version consistency
+      run: |
+        cmake_ver=$(sed -n 's/^project(OctoSnap VERSION \([0-9.]*\).*/\1/p' CMakeLists.txt)
+        pkg_ver=$(sed -n 's/^DISTNAME=[[:space:]]*octosnap-//p' netbsd/Makefile)
+        echo "CMakeLists.txt: $cmake_ver / netbsd/Makefile: $pkg_ver"
+        test -n "$cmake_ver" && test "$cmake_ver" = "$pkg_ver"
+        grep -q "^## \[$cmake_ver\]" CHANGELOG.md
+
     - name: Install Dependencies
       run: |
         sudo apt-get update

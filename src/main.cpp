@@ -29,7 +29,7 @@ int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
     QApplication::setOrganizationName(QStringLiteral("OctoSnap"));
     QApplication::setApplicationName(QStringLiteral("OctoSnap"));
-    QApplication::setApplicationVersion(QStringLiteral("0.1.0"));
+    QApplication::setApplicationVersion(QStringLiteral(OCTOSNAP_VERSION));
 
     Theme::captureSystemDefaults();
     installTranslator(app);

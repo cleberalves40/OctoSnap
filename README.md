@@ -8,7 +8,7 @@
 
 Interface gráfica nativa em **C++ / Qt6** para os snapshots de sistema de arquivos do NetBSD ([`fss(4)`](https://man.netbsd.org/fss.4) / [`fssconfig(8)`](https://man.netbsd.org/fssconfig.8)), permitindo criar, inspecionar e remover snapshots FFS de forma rápida e segura.
 
-> ⚠️ **Work in progress** – versão 0.1.0. A restauração de arquivos a partir de um snapshot está planejada para a próxima fase.
+> ⚠️ **Work in progress** – versão 0.1.1. A restauração de arquivos a partir de um snapshot está planejada para a próxima fase.
 
 ---
 
@@ -30,6 +30,7 @@ OctoSnap/
 ├── helper/
 │   └── octosnap-helper.cpp  # Helper privilegiado (sem Qt, sem shell)
 ├── translations/            # Traduções Qt Linguist (en, pt_BR)
+├── CHANGELOG.md             # Histórico de versões
 ├── README.md
 ├── LICENSE
 └── src/
@@ -129,7 +130,8 @@ visudo -f /etc/sudoers.d/octosnap
 - Todo push e PR para `main` executa o workflow **Build & Test**:
   - **Ubuntu / Qt 6.7**: compila a GUI com Clang (verificação rápida de portabilidade).
   - **NetBSD (VM)**: compila a GUI e o `octosnap-helper` com os pacotes Qt6 do pkgsrc.
-- Releases são marcadas com tags `X.Y.Z` (ex.: `0.1.0`), que o `netbsd/Makefile` usa para baixar o código (`GITHUB_TAG`).
+- Releases são marcadas com tags `X.Y.Z` (ex.: `0.1.1`), que o `netbsd/Makefile` usa para baixar o código (`GITHUB_TAG`).
+- Para uma nova versão: altere `project(... VERSION ...)` no `CMakeLists.txt` e `DISTNAME` no `netbsd/Makefile` (o CI verifica se coincidem), registre as mudanças no [CHANGELOG.md](CHANGELOG.md), faça o merge e crie a tag.
 
 ---
 
