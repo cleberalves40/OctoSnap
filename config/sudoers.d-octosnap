@@ -1,0 +1,3 @@
+# Edit with: visudo -f /etc/sudoers.d/octosnap
+# Only the helper, with any arguments it validates itself.
+%wheel ALL=(root) /usr/pkg/libexec/octosnap-helper *

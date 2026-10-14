@@ -1,0 +1,50 @@
+# Build artifacts
+build/
+build-*/
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dylib
+*.dll
+*.app/
+octosnap
+octosnap-helper
+
+# Qt generated files
+moc_*
+*.moc
+ui_*
+qrc_*
+*.qm
+.rcc/
+.qt/
+/Makefile
+Makefile.*
+!netbsd/Makefile
+*.qmake.stash
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+
+# IDEs & Editors
+.vscode/
+.idea/
+*.user
+*.user.*
+*.suo
+*.workspace
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Archives & logs
+*.tar.gz
+*.zip
+*.log

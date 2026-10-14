@@ -1,0 +1,3 @@
+# /etc/doas.conf
+# 'persist' keeps the authorization for a while; the password is requested on a TTY.
+permit persist :wheel as root cmd /usr/pkg/libexec/octosnap-helper

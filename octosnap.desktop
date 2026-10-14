@@ -1,0 +1,12 @@
+[Desktop Entry]
+Type=Application
+Name=OctoSnap
+GenericName=FFS Snapshot Manager
+GenericName[pt_BR]=Gerenciador de Snapshots FFS
+Comment=Manage NetBSD FFS snapshots (fss)
+Comment[pt_BR]=Gerencie snapshots FFS do NetBSD (fss)
+Exec=octosnap
+Icon=camera-photo
+Terminal=false
+Categories=System;Utility;Qt;
+Keywords=snapshot;fss;ffs;backup;netbsd;
