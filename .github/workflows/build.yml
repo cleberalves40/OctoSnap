@@ -5,6 +5,7 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
   build-linux-qt6:
@@ -12,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
     - name: Install Dependencies
       run: |
@@ -42,13 +43,20 @@ jobs:
     name: Build on NetBSD (VM)
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
     - name: Build on NetBSD
       uses: vmactions/netbsd-vm@v1
       with:
         usesh: true
         prepare: |
+          set -e
+          # The VM image has no X11 sets; Qt6 binary packages link against
+          # /usr/X11R7 (libxcb, libX11, libGL), and Qt's CMake config needs the headers.
+          for set in xbase xcomp; do
+            ftp -o - "https://cdn.netbsd.org/pub/NetBSD/NetBSD-$(uname -r)/$(uname -m)/binary/sets/${set}.tar.xz" \
+              | tar -xJpf - -C /
+          done
           command -v pkgin >/dev/null || /usr/sbin/pkg_add pkgin
           pkgin -y install cmake ninja-build qt6-qtbase qt6-qttools
         run: |
