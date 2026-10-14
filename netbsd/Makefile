@@ -4,7 +4,7 @@ DISTNAME=	octosnap-0.1.0
 CATEGORIES=	sysutils
 MASTER_SITES=	${MASTER_SITE_GITHUB:=cleberalves40/}
 GITHUB_PROJECT=	OctoSnap
-GITHUB_TAG=	v${PKGVERSION_NOREV}
+GITHUB_TAG=	${PKGVERSION_NOREV}
 
 MAINTAINER=	cleberalves40@github.com
 HOMEPAGE=	https://github.com/cleberalves40/OctoSnap

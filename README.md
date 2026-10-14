@@ -129,7 +129,7 @@ visudo -f /etc/sudoers.d/octosnap
 - Todo push e PR para `main` executa o workflow **Build & Test**:
   - **Ubuntu / Qt 6.7**: compila a GUI com Clang (verificação rápida de portabilidade).
   - **NetBSD (VM)**: compila a GUI e o `octosnap-helper` com os pacotes Qt6 do pkgsrc.
-- Releases são marcadas com tags `vX.Y.Z`, que o `netbsd/Makefile` usa para baixar o código (`GITHUB_TAG`).
+- Releases são marcadas com tags `X.Y.Z` (ex.: `0.1.0`), que o `netbsd/Makefile` usa para baixar o código (`GITHUB_TAG`).
 
 ---
 
