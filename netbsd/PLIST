@@ -1,0 +1,6 @@
+@comment $NetBSD$
+bin/octosnap
+libexec/octosnap-helper
+share/applications/octosnap.desktop
+share/examples/octosnap/doas.conf.example
+share/examples/octosnap/sudoers.d-octosnap

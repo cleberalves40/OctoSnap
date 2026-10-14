@@ -1,0 +1,11 @@
+OctoSnap is a lightweight Qt6 graphical user interface for NetBSD's
+file system snapshots (fss(4) / fssconfig(8)), allowing administrators
+to manage FFS snapshots.
+
+Features:
+- List snapshots with unit, mount point, backing-store size and state
+- Create and destroy snapshots (optionally removing the backing store)
+- Mount snapshots read-only for file inspection and unmount them
+- Privilege separation: a minimal, allow-listed helper runs as root
+  through doas(1) or sudo(8); the GUI never runs as root
+- Built-in theme switcher and internationalization (en, pt_BR)
