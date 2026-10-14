@@ -165,7 +165,7 @@ void MainWindow::buildMenus() {
     auto *file = menuBar()->addMenu(tr("&File"));
     file->addAction(m_refreshAct);
     file->addSeparator();
-    file->addAction(tr("&Quit"), this, &QWidget::close, QKeySequence::Quit);
+    file->addAction(tr("&Quit"), QKeySequence::Quit, this, &QWidget::close);
 
     auto *actions = menuBar()->addMenu(tr("&Actions"));
     actions->addAction(m_createAct);
@@ -434,9 +434,9 @@ void MainWindow::onRestore() {
 
 void MainWindow::onAbout() {
     QMessageBox::about(this, tr("About OctoSnap"),
-        tr("<b>OctoSnap 0.1.0</b><br>"
+        tr("<b>OctoSnap %1</b><br>"
            "Snapshot manager for FFS/UFS on NetBSD, using fss(4).<br>"
-           "Interface modeled after bectl and OctoPkgsrc."));
+           "Interface modeled after bectl and OctoPkgsrc.").arg(QApplication::applicationVersion()));
 }
 
 void MainWindow::reportError(const QString &title, const QString &message) {

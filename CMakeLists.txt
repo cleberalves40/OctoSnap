@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(OctoSnap VERSION 0.1.0 LANGUAGES CXX)
+project(OctoSnap VERSION 0.1.1 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -21,6 +21,8 @@ qt_add_executable(octosnap
 )
 
 target_link_libraries(octosnap PRIVATE Qt6::Core Qt6::Gui Qt6::Widgets)
+# Single source of truth for the version: project(... VERSION ...)
+target_compile_definitions(octosnap PRIVATE OCTOSNAP_VERSION="${PROJECT_VERSION}")
 
 qt_add_translations(octosnap
     TS_FILES
