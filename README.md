@@ -8,7 +8,7 @@
 
 Interface gráfica nativa em **C++ / Qt6** para os snapshots de sistema de arquivos do NetBSD ([`fss(4)`](https://man.netbsd.org/fss.4) / [`fssconfig(8)`](https://man.netbsd.org/fssconfig.8)), permitindo criar, inspecionar e remover snapshots FFS de forma rápida e segura.
 
-> ⚠️ **Work in progress** – versão 0.1.1. A restauração de arquivos a partir de um snapshot está planejada para a próxima fase.
+> ⚠️ **Work in progress** – versão 0.2.0. O histórico de versões está no [CHANGELOG.md](CHANGELOG.md).
 
 ---
 
@@ -44,6 +44,7 @@ OctoSnap/
 |:---|:---|:---|
 | **Backend** | `src/FssBackend.*` | Lista sistemas FFS montados e chama o helper via `doas`/`sudo` |
 | **Interface GUI** | `src/MainWindow.*` | Janela Qt6, filtro, abas Informação / Saída / Ajuda |
+| **Restauração** | `src/RestoreDialog.*` | Seleção de itens no snapshot e prévia da restauração |
 | **Temas** | `src/Theme.*` | Paletas e estilo Fusion |
 | **Helper** | `helper/octosnap-helper.cpp` | Operações privilegiadas com lista fixa de comandos |
 | **i18n** | `translations/*.ts` | Tradução (en, pt_BR) embutida como recurso Qt |
@@ -58,7 +59,10 @@ octosnap-helper create  <nome> <ponto-de-montagem>
 octosnap-helper destroy <nome> [--remove-backing]
 octosnap-helper mount-ro <nome> <diretório>
 octosnap-helper umount  <diretório>
+octosnap-helper restore <nome> [--rename-existing] <caminho-relativo>...
 ```
+
+No `restore`, cada componente do caminho é aberto com `openat(O_NOFOLLOW)` a partir das raízes do snapshot e do sistema vivo: symlinks do sistema vivo não desviam escritas feitas como root e nenhum outro ponto de montagem é atravessado.
 
 O estado fica em `/var/db/octosnap` (metadados e arquivos de *backing store*).
 
@@ -69,6 +73,7 @@ O estado fica em `/var/db/octosnap` (metadados e arquivos de *backing store*).
 - **Listagem**: snapshots com unidade `fssN`, ponto de montagem, espaço ocupado, data de criação e estado (ativo, montado RO ou obsoleto).
 - **Criação**: escolha do sistema de arquivos FFS e do nome do snapshot.
 - **Montagem somente leitura**: inspecione o conteúdo de um snapshot em um diretório vazio.
+- **Restauração de arquivos com prévia**: selecione arquivos ou diretórios dentro do snapshot e copie-os de volta ao sistema de arquivos original. A prévia compara a versão do snapshot com a atual; por padrão a versão atual é preservada como `<item>.octosnap-<data>`. Diretórios são mesclados (arquivos criados depois do snapshot são mantidos); dono, permissões e datas são preservados.
 - **Destruição**: com opção de remover também o arquivo de *backing store*.
 - **Temas e idiomas**: alternância de tema em tempo real; idioma do sistema, inglês ou português.
 

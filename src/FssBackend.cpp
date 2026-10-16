@@ -111,3 +111,11 @@ HelperResult FssBackend::mountSnapshot(const QString &name, const QString &dir) 
 HelperResult FssBackend::unmountSnapshot(const QString &dir) const {
     return runHelper({QStringLiteral("umount"), dir});
 }
+
+HelperResult FssBackend::restoreItems(const QString &name, const QStringList &relPaths,
+                                      bool renameExisting) const {
+    QStringList args{QStringLiteral("restore"), name};
+    if (renameExisting) args << QStringLiteral("--rename-existing");
+    args << relPaths;
+    return runHelper(args);
+}

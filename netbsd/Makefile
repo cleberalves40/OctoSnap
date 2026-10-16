@@ -1,6 +1,6 @@
 # $NetBSD$
 
-DISTNAME=	octosnap-0.1.1
+DISTNAME=	octosnap-0.2.0
 CATEGORIES=	sysutils
 MASTER_SITES=	${MASTER_SITE_GITHUB:=cleberalves40/}
 GITHUB_PROJECT=	OctoSnap
