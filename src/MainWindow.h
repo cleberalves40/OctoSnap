@@ -36,6 +36,7 @@ private:
     void updateStatusBar();
     void updateThemeLabel();
     int selectedIndex() const;   // index into m_all, or -1
+    bool mountInteractive(const QString &name);   // asks for a directory, then mounts
     void log(const QString &message);
     void reportError(const QString &title, const QString &message);
 

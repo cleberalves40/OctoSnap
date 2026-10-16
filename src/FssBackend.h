@@ -42,6 +42,11 @@ public:
     HelperResult destroySnapshot(const QString &name, bool removeBacking) const;
     HelperResult mountSnapshot(const QString &name, const QString &dir) const;
     HelperResult unmountSnapshot(const QString &dir) const;
+    // Copies items (paths relative to the filesystem root) from the snapshot's
+    // read-only mount back to the live filesystem. With renameExisting, the
+    // current version of each item is kept as <item>.octosnap-<timestamp>.
+    HelperResult restoreItems(const QString &name, const QStringList &relPaths,
+                              bool renameExisting) const;
 
 private:
     HelperResult runHelper(const QStringList &args) const;

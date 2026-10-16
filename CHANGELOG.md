@@ -4,6 +4,25 @@ Todas as mudanças relevantes do OctoSnap são registradas aqui.
 O formato segue o [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/)
 e o projeto usa [versionamento semântico](https://semver.org/lang/pt-BR/).
 
+## [0.2.0] - 2026-10-16
+
+### Adicionado
+- Restauração de arquivos e diretórios a partir de um snapshot (ação **Restaurar**):
+  diálogo com a árvore do snapshot, seleção múltipla e prévia comparando a versão
+  do snapshot com a atual. Se o snapshot não estiver montado, oferece a montagem
+  somente leitura antes de abrir o diálogo.
+- Por padrão a versão atual de cada item é preservada como
+  `<item>.octosnap-AAAAMMDD-HHMMSS`; sobrescrever exige confirmação adicional.
+- Comando `restore <nome> [--rename-existing] <caminho>...` no `octosnap-helper`:
+  percorre os caminhos com `openat(O_NOFOLLOW)`, não atravessa outros sistemas de
+  arquivos, grava via arquivo temporário + `renameat` e preserva dono, modo e datas.
+  Diretórios são mesclados; diretórios pais ausentes são recriados.
+
+### Limitações conhecidas
+- Hard links são restaurados como cópias independentes e arquivos esparsos são
+  expandidos; dispositivos, FIFOs e sockets são ignorados.
+- As novas mensagens ainda não têm tradução pt_BR.
+
 ## [0.1.1] - 2026-10-14
 
 ### Corrigido
@@ -25,5 +44,6 @@ e o projeto usa [versionamento semântico](https://semver.org/lang/pt-BR/).
 - Temas, tradução (en, pt_BR), CI no GitHub Actions, modelo de pacote pkgsrc e
   arquivo `.desktop`.
 
+[0.2.0]: https://github.com/cleberalves40/OctoSnap/compare/0.1.1...0.2.0
 [0.1.1]: https://github.com/cleberalves40/OctoSnap/compare/0.1.0...0.1.1
 [0.1.0]: https://github.com/cleberalves40/OctoSnap/releases/tag/0.1.0

@@ -1,4 +1,5 @@
 #include "MainWindow.h"
+#include "RestoreDialog.h"
 #include "Theme.h"
 
 #include <QAbstractItemView>
@@ -90,6 +91,10 @@ void MainWindow::buildUi() {
         "New snapshot: choose a mounted filesystem, then give the snapshot a name.\n"
         "Mount read-only: mounts an active snapshot in an empty directory you choose.\n"
         "Unmount: releases a read-only mount made by OctoSnap.\n"
+        "Restore: pick files or directories inside the snapshot and copy them back to\n"
+        "the live filesystem. A preview shows what changes; by default the current\n"
+        "version of each item is kept as <item>.octosnap-<date>. Directories are merged:\n"
+        "files created after the snapshot are kept.\n"
         "Destroy selected: removes the snapshot. Destroying data cannot be undone.\n\n"
         "Snapshots do not survive a reboot. Those marked Stale must be destroyed."));
 
@@ -138,7 +143,7 @@ void MainWindow::buildToolBar() {
 
     m_restoreAct = tb->addAction(QIcon::fromTheme(QStringLiteral("document-revert")), tr("Restore"));
     m_restoreAct->setEnabled(false);
-    m_restoreAct->setToolTip(tr("Planned for the next phase: file-level restore with preview"));
+    m_restoreAct->setToolTip(tr("Copy files or directories from the snapshot back to the live filesystem"));
     connect(m_restoreAct, &QAction::triggered, this, &MainWindow::onRestore);
 
     tb->addSeparator();
@@ -293,7 +298,7 @@ void MainWindow::onTableSelectionChanged() {
     m_destroyAct->setEnabled(has);
     m_mountAct->setEnabled(has && m_all[idx].active && !mounted);
     m_unmountAct->setEnabled(mounted);
-    // m_restoreAct stays disabled until the restore phase is implemented.
+    m_restoreAct->setEnabled(has && m_all[idx].active);
 
     updateInformation(idx);
 }
@@ -394,23 +399,26 @@ void MainWindow::onDestroy() {
     refreshAll();
 }
 
-void MainWindow::onMount() {
-    const int idx = selectedIndex();
-    if (idx < 0) return;
-    const SnapshotInfo s = m_all[idx];
-
+bool MainWindow::mountInteractive(const QString &name) {
     const QString dir = QFileDialog::getExistingDirectory(
         this, tr("Choose an empty directory for the read-only mount"),
         QDir::homePath());
-    if (dir.isEmpty()) return;
+    if (dir.isEmpty()) return false;
 
-    const HelperResult r = m_backend.mountSnapshot(s.name, dir);
+    const HelperResult r = m_backend.mountSnapshot(name, dir);
     if (!r.ok) {
         reportError(tr("Mount snapshot"), r.error);
-        return;
+        return false;
     }
-    log(tr("Snapshot '%1' mounted read-only at %2.").arg(s.name, dir));
+    log(tr("Snapshot '%1' mounted read-only at %2.").arg(name, dir));
     refreshAll();
+    return true;
+}
+
+void MainWindow::onMount() {
+    const int idx = selectedIndex();
+    if (idx < 0) return;
+    mountInteractive(m_all[idx].name);
 }
 
 void MainWindow::onUnmount() {
@@ -429,7 +437,74 @@ void MainWindow::onUnmount() {
 }
 
 void MainWindow::onRestore() {
-    // Intentionally empty: restore is part of the next phase.
+    int idx = selectedIndex();
+    if (idx < 0 || !m_all[idx].active) return;
+    const QString name = m_all[idx].name;
+
+    // Restore reads from the read-only mount, so the snapshot must be mounted.
+    if (m_all[idx].readOnlyPath.isEmpty()) {
+        const auto answer = QMessageBox::question(
+            this, tr("Restore"),
+            tr("Snapshot \"%1\" must be mounted read-only before its files can be "
+               "restored. Mount it now?").arg(name));
+        if (answer != QMessageBox::Yes || !mountInteractive(name)) return;
+
+        idx = selectedIndex();   // refreshAll() rebuilt m_all
+        if (idx < 0 || m_all[idx].name != name || m_all[idx].readOnlyPath.isEmpty()) return;
+    }
+    const SnapshotInfo s = m_all[idx];
+
+    RestoreDialog dialog(s, this);
+    if (dialog.exec() != QDialog::Accepted) return;
+
+    const QStringList items = dialog.relativePaths();
+    const bool keepCurrent = dialog.keepCurrent();
+    if (items.isEmpty()) return;
+
+    if (!keepCurrent) {
+        QMessageBox box(this);
+        box.setIcon(QMessageBox::Warning);
+        box.setWindowTitle(tr("Restore"));
+        box.setText(tr("Overwrite %n item(s) on %1 with the version from \"%2\"?",
+                       nullptr, static_cast<int>(items.size())).arg(s.mountPoint, s.name));
+        box.setInformativeText(tr("The current contents of these items are replaced and "
+                                  "cannot be recovered afterwards."));
+        box.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+        box.setDefaultButton(QMessageBox::No);
+        if (box.exec() != QMessageBox::Yes) return;
+    }
+
+    log(tr("Restoring %n item(s) from '%1'…", nullptr, static_cast<int>(items.size())).arg(s.name));
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+    const HelperResult r = m_backend.restoreItems(s.name, items, keepCurrent);
+    QApplication::restoreOverrideCursor();
+
+    // Helper output lines: restored|backup|created|skipped|summary, tab separated.
+    const auto lines = r.output.split(QLatin1Char('\n'), Qt::SkipEmptyParts);
+    for (const QString &line : lines) {
+        const QStringList f = line.split(QLatin1Char('\t'));
+        const QString kind = f.value(0);
+        if (kind == QLatin1String("restored"))
+            log(tr("Restored %1").arg(f.value(1)));
+        else if (kind == QLatin1String("backup"))
+            log(tr("Current version of %1 kept as %2").arg(f.value(1), f.value(2)));
+        else if (kind == QLatin1String("created"))
+            log(tr("Recreated missing directory %1").arg(f.value(1)));
+        else if (kind == QLatin1String("skipped"))
+            log(tr("Skipped %1 (%2)").arg(f.value(1), f.value(2)));
+        else if (kind == QLatin1String("summary") && f.size() >= 6)
+            log(tr("Restore summary: %1 file(s), %2 director(ies), %3 symlink(s), "
+                   "%4 skipped, %5 error(s).")
+                    .arg(f[1], f[2], f[3], f[4], f[5]));
+    }
+
+    if (!r.ok) {
+        m_tabs->setCurrentWidget(m_output);
+        reportError(tr("Restore"), r.error);
+        return;
+    }
+    log(tr("Restore from '%1' finished.").arg(s.name));
+    statusBar()->showMessage(tr("Restore finished."), 5000);
 }
 
 void MainWindow::onAbout() {
