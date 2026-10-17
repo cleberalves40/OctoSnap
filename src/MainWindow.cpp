@@ -20,6 +20,7 @@
 #include <QMessageBox>
 #include <QPlainTextEdit>
 #include <QSettings>
+#include <QShortcut>
 #include <QSizePolicy>
 #include <QSplitter>
 #include <QStatusBar>
@@ -134,10 +135,12 @@ void MainWindow::buildToolBar() {
 
     m_mountAct = tb->addAction(QIcon::fromTheme(QStringLiteral("drive-harddisk")),
                                tr("Mount read-only"));
+    m_mountAct->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_M));
     m_mountAct->setEnabled(false);
     connect(m_mountAct, &QAction::triggered, this, &MainWindow::onMount);
 
     m_unmountAct = tb->addAction(QIcon::fromTheme(QStringLiteral("media-eject")), tr("Unmount"));
+    m_unmountAct->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_U));
     m_unmountAct->setEnabled(false);
     connect(m_unmountAct, &QAction::triggered, this, &MainWindow::onUnmount);
 
@@ -150,6 +153,7 @@ void MainWindow::buildToolBar() {
 
     m_destroyAct = tb->addAction(QIcon::fromTheme(QStringLiteral("edit-delete")),
                                  tr("Destroy selected"));
+    m_destroyAct->setShortcut(QKeySequence::Delete);
     m_destroyAct->setEnabled(false);
     connect(m_destroyAct, &QAction::triggered, this, &MainWindow::onDestroy);
 
@@ -164,6 +168,12 @@ void MainWindow::buildToolBar() {
     m_filter->setMinimumWidth(220);
     connect(m_filter, &QLineEdit::textChanged, this, [this]() { populateSnapshotTable(); });
     tb->addWidget(m_filter);
+
+    auto *findShortcut = new QShortcut(QKeySequence::Find, this);
+    connect(findShortcut, &QShortcut::activated, this, [this]() {
+        m_filter->setFocus();
+        m_filter->selectAll();
+    });
 }
 
 void MainWindow::buildMenus() {

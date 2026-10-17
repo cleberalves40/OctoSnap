@@ -18,10 +18,13 @@ e o projeto usa [versionamento semântico](https://semver.org/lang/pt-BR/).
   arquivos, grava via arquivo temporário + `renameat` e preserva dono, modo e datas.
   Diretórios são mesclados; diretórios pais ausentes são recriados.
 
+- Tradução completa de todas as mensagens (103 strings) para Português do Brasil (pt_BR) e Inglês (en_US).
+- Suporte a compilação alternativa com QMake (`octosnap.pro`).
+- Atalhos de teclado para montagem (<kbd>Ctrl+M</kbd>), desmontagem (<kbd>Ctrl+U</kbd>), exclusão (<kbd>Delete</kbd>) e filtro (<kbd>Ctrl+F</kbd>).
+
 ### Limitações conhecidas
 - Hard links são restaurados como cópias independentes e arquivos esparsos são
   expandidos; dispositivos, FIFOs e sockets são ignorados.
-- As novas mensagens ainda não têm tradução pt_BR.
 
 ## [0.1.1] - 2026-10-14
 

@@ -17,6 +17,7 @@ Interface gráfica nativa em **C++ / Qt6** para os snapshots de sistema de arqui
 ```text
 OctoSnap/
 ├── CMakeLists.txt           # Build system (CMake ≥ 3.21, Qt ≥ 6.5)
+├── octosnap.pro             # Build system alternativo (QMake)
 ├── octosnap.desktop         # Entrada para o menu de aplicativos desktop
 ├── netbsd/                  # Modelo de pacote para o pkgsrc
 │   ├── Makefile
@@ -37,6 +38,7 @@ OctoSnap/
     ├── main.cpp             # Ponto de entrada (QApplication & i18n)
     ├── FssBackend.h/.cpp    # Integração com o helper via doas/sudo
     ├── MainWindow.h/.cpp    # Janela Qt6, tabela de snapshots e diálogos
+    ├── RestoreDialog.h/.cpp # Diálogo de restauração granular com prévia
     └── Theme.h/.cpp         # Temas (Nord, Catppuccin, Solarized, ...)
 ```
 
@@ -95,6 +97,15 @@ cmake --build build
 doas cmake --install build --prefix /usr/pkg
 ```
 
+### Com QMake
+
+```sh
+mkdir -p build && cd build
+qmake6 ../octosnap.pro
+make -j$(sysctl -n hw.ncpu)
+./octosnap
+```
+
 ### Com pkgsrc
 
 Copie o diretório `netbsd/` para `/usr/pkgsrc/sysutils/octosnap`, gere o `distinfo` e instale:
@@ -124,7 +135,11 @@ visudo -f /etc/sudoers.d/octosnap
 | Atalho | Ação |
 |:---|:---|
 | <kbd>F5</kbd> | Atualizar lista de snapshots |
-| <kbd>Ctrl+N</kbd> | Criar novo snapshot |
+| <kbd>Ctrl+N</kbd> | Criar novo snapshot FFS |
+| <kbd>Ctrl+M</kbd> | Montar snapshot selecionado em modo somente leitura |
+| <kbd>Ctrl+U</kbd> | Desmontar snapshot selecionado |
+| <kbd>Delete</kbd> | Destruir snapshot selecionado |
+| <kbd>Ctrl+F</kbd> | Focar no campo de busca/filtro |
 | <kbd>Ctrl+Q</kbd> | Sair |
 
 ---

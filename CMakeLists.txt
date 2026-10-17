@@ -22,6 +22,9 @@ qt_add_executable(octosnap
     src/RestoreDialog.cpp
 )
 
+target_compile_options(octosnap PRIVATE
+    $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-Wall -Wextra>
+)
 target_link_libraries(octosnap PRIVATE Qt6::Core Qt6::Gui Qt6::Widgets)
 # Single source of truth for the version: project(... VERSION ...)
 target_compile_definitions(octosnap PRIVATE OCTOSNAP_VERSION="${PROJECT_VERSION}")
@@ -34,11 +37,20 @@ qt_add_translations(octosnap
 )
 
 # Privileged helper: no Qt, no shell, fixed command set
-add_executable(octosnap-helper helper/octosnap-helper.cpp)
-target_compile_options(octosnap-helper PRIVATE -Wall -Wextra -Wpedantic)
+if(CMAKE_SYSTEM_NAME STREQUAL "NetBSD")
+    set(BUILD_HELPER_DEFAULT ON)
+else()
+    set(BUILD_HELPER_DEFAULT OFF)
+endif()
+option(BUILD_HELPER "Build privileged octosnap-helper" ${BUILD_HELPER_DEFAULT})
+
+if(BUILD_HELPER)
+    add_executable(octosnap-helper helper/octosnap-helper.cpp)
+    target_compile_options(octosnap-helper PRIVATE -Wall -Wextra -Wpedantic)
+    install(TARGETS octosnap-helper RUNTIME DESTINATION libexec)
+endif()
 
 install(TARGETS octosnap RUNTIME DESTINATION bin)
-install(TARGETS octosnap-helper RUNTIME DESTINATION libexec)
 install(FILES octosnap.desktop DESTINATION share/applications)
 install(FILES config/doas.conf.example config/sudoers.d-octosnap
         DESTINATION share/examples/octosnap)
