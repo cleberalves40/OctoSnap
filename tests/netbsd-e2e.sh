@@ -30,6 +30,7 @@ ro=$work/ro
 
 cleanup() {
 	set +e
+	"$helper" destroy "$snap-2" --remove-backing >/dev/null 2>&1
 	"$helper" destroy "$snap" --remove-backing >/dev/null 2>&1
 	umount "$live" 2>/dev/null
 	vnconfig -u "$vnd" 2>/dev/null
@@ -74,7 +75,16 @@ printf 'new\n' >"$live/new.txt"
 
 step "list"
 "$helper" list
-"$helper" list | grep -q "^$snap$tab" || fail "snapshot missing from list"
+# Columns: name unit mountpoint backing created rodir active size
+line=$("$helper" list | grep "^$snap$tab") || fail "snapshot missing from list"
+expect "$(echo "$line" | cut -f7)" 1 "active flag"
+
+step "second snapshot gets another unit"
+out2=$("$helper" create "$snap-2" "$live")
+echo "$out2"
+[ "$out2" != "$out" ] || fail "both snapshots got ${out#ok }"
+"$helper" destroy "$snap-2" --remove-backing
+expect "$(fssconfig -l | grep -c "^${out2#ok }: not in use")" 1 "unit released by destroy"
 
 step "mount-ro"
 "$helper" mount-ro "$snap" "$ro"
@@ -115,6 +125,7 @@ step "umount and destroy"
 if "$helper" list | grep -q "^$snap$tab"; then
 	fail "snapshot still listed after destroy"
 fi
+expect "$(fssconfig -l | grep -c "^${out#ok }: not in use")" 1 "unit released by destroy"
 
 if [ -x "$gui" ]; then
 	# The GUI has no batch mode; it must stay up until timeout(1) stops it

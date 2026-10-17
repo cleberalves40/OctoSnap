@@ -247,7 +247,8 @@ void saveMeta(const std::vector<Entry> &v) {
     if (rename(tmp.c_str(), kMetaFile) != 0) fail("cannot replace metadata");
 }
 
-// Units currently configured in the kernel, per fssconfig -l.
+// Units currently configured in the kernel, per fssconfig -l, which prints
+// one line per unit: "fss0: /mount/point" or "fss1: not in use".
 std::set<std::string> activeUnits() {
     std::string out;
     if (runCmd({kFssconfig, "-l"}, &out) != 0) fail("fssconfig -l failed");
@@ -259,8 +260,11 @@ std::set<std::string> activeUnits() {
         const std::string line = out.substr(pos, nl == std::string::npos ? std::string::npos : nl - pos);
         pos = (nl == std::string::npos) ? out.size() : nl + 1;
 
-        const std::string tok = line.substr(0, line.find_first_of(" \t"));
-        if (validUnit(tok)) used.insert(tok);
+        const size_t colon = line.find(": ");
+        if (colon == std::string::npos) continue;
+        const std::string unit = line.substr(0, colon);
+        if (validUnit(unit) && line.compare(colon + 2, std::string::npos, "not in use") != 0)
+            used.insert(unit);
     }
     return used;
 }
