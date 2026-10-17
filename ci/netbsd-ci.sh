@@ -40,9 +40,22 @@ fi
 # Those images also ship older packages (e.g. pcre2) that the repository's
 # Qt6 needs newer: -uu lets pkg_add update such dependencies.
 export PKG_PATH="https://cdn.netbsd.org/pub/pkgsrc/packages/NetBSD/$arch/${release%%.*}.0/All"
-for pkg in cmake ninja-build qt6-qtbase qt6-qttools; do
-	pkg_info -qe "$pkg" || pkg_add -uu "$pkg"
+# When the server drops an HTTPS connection, pkg_add tries to reconnect but
+# can be killed by SIGPIPE first (seen under QEMU user networking). Ignoring
+# SIGPIPE turns that into a write error it recovers from; retries cover the
+# rest, since already installed packages are skipped.
+trap '' PIPE
+for attempt in 1 2 3; do
+	missing=
+	for pkg in cmake ninja-build qt6-qtbase qt6-qttools; do
+		pkg_info -qe "$pkg" || pkg_add -uu "$pkg" || missing="$missing $pkg"
+	done
+	[ -z "$missing" ] && break
+	echo "== packages still missing after attempt $attempt:$missing"
+	[ "$attempt" -lt 3 ] || exit 1
+	sleep 10
 done
+trap - PIPE
 
 echo "== toolchain"
 c++ --version | head -1
