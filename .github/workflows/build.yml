@@ -7,6 +7,14 @@ on:
     branches: [ "main" ]
   workflow_dispatch:
 
+# One job per NetBSD architecture. Each one builds the GUI and the helper with
+# the release's own toolchain and pkgsrc Qt6 packages, then runs
+# tests/netbsd-e2e.sh against a real fss(4) device (see ci/netbsd-ci.sh).
+env:
+  NETBSD_RELEASE: "10.2"
+  # anita 2.18 + HTTP/HTTPS detection fix; pinned for reproducible runs.
+  ANITA_COMMIT: 7e22f9b0489ee52d8962fa8103d8dc6a2455c908
+
 jobs:
   build-linux-qt6:
     name: Build GUI with Qt6 (Ubuntu)
@@ -19,8 +27,9 @@ jobs:
       run: |
         cmake_ver=$(sed -n 's/^project(OctoSnap VERSION \([0-9.]*\).*/\1/p' CMakeLists.txt)
         pkg_ver=$(sed -n 's/^DISTNAME=[[:space:]]*octosnap-//p' netbsd/Makefile)
-        echo "CMakeLists.txt: $cmake_ver / netbsd/Makefile: $pkg_ver"
-        test -n "$cmake_ver" && test "$cmake_ver" = "$pkg_ver"
+        pro_ver=$(grep 'OCTOSNAP_VERSION' octosnap.pro | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+        echo "CMakeLists.txt: $cmake_ver / netbsd/Makefile: $pkg_ver / octosnap.pro: $pro_ver"
+        test -n "$cmake_ver" && test "$cmake_ver" = "$pkg_ver" && test "$cmake_ver" = "$pro_ver"
         grep -q "^## \[$cmake_ver\]" CHANGELOG.md
 
     - name: Install Dependencies
@@ -42,32 +51,88 @@ jobs:
           -DCMAKE_CXX_COMPILER=clang++
 
     # The helper uses NetBSD-only APIs (fss(4), getmntinfo/statvfs);
-    # it is built in the NetBSD job below.
+    # it is built and tested in the NetBSD jobs below.
     - name: Build GUI with CMake
       run: |
         cmake --build build --target octosnap --verbose
 
-  build-netbsd:
-    name: Build on NetBSD (VM)
+  # amd64 and aarch64: ready-made VMs from vmactions. aarch64 is emulated
+  # on the x86_64 runner, as the action recommends.
+  netbsd-amd64:
+    name: NetBSD/amd64 (x86_64, LP64)
     runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+    - uses: actions/checkout@v5
+    - uses: vmactions/netbsd-vm@v1
+      with:
+        release: ${{ env.NETBSD_RELEASE }}
+        usesh: true
+        run: sh ci/netbsd-ci.sh
+
+  netbsd-aarch64:
+    name: NetBSD/evbarm-aarch64 (ARM64, LP64)
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+    - uses: actions/checkout@v5
+    - uses: vmactions/netbsd-vm@v1
+      with:
+        release: ${{ env.NETBSD_RELEASE }}
+        arch: aarch64
+        usesh: true
+        run: sh ci/netbsd-ci.sh
+
+  # i386 and earmv7hf: no ready-made VM exists, so NetBSD's own test tool,
+  # anita, installs (i386) or boots the official image (earmv7hf) under QEMU.
+  netbsd-i386:
+    name: NetBSD/i386 (x86, ILP32)
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
     steps:
     - uses: actions/checkout@v5
 
-    - name: Build on NetBSD
-      uses: vmactions/netbsd-vm@v1
-      with:
-        usesh: true
-        prepare: |
-          set -e
-          # The VM image has no X11 sets; Qt6 binary packages link against
-          # /usr/X11R7 (libxcb, libX11, libGL), and Qt's CMake config needs the headers.
-          for set in xbase xcomp; do
-            ftp -o - "https://cdn.netbsd.org/pub/NetBSD/NetBSD-$(uname -r)/$(uname -m)/binary/sets/${set}.tar.xz" \
-              | tar -xJpf - -C /
-          done
-          command -v pkgin >/dev/null || /usr/sbin/pkg_add pkgin
-          pkgin -y install cmake ninja-build qt6-qtbase qt6-qttools
-        run: |
-          cmake -B build -S . -G Ninja -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_PREFIX_PATH=/usr/pkg/qt6
-          cmake --build build
+    - name: Enable KVM
+      run: |
+        echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+          | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+        sudo udevadm control --reload-rules
+        sudo udevadm trigger --name-match=kvm
+
+    - name: Install QEMU and anita
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y qemu-system-x86 python3-pexpect genisoimage
+        git clone -q https://github.com/gson1703/anita.git "$RUNNER_TEMP/anita"
+        git -C "$RUNNER_TEMP/anita" checkout -q "$ANITA_COMMIT"
+
+    - name: Build and test in NetBSD/i386
+      env:
+        ANITA: ${{ runner.temp }}/anita/anita
+      run: |
+        sh ci/anita-run.sh i386 \
+          --boot-from cdrom \
+          --sets kern-GENERIC,modules,base,etc,comp,xbase,xcomp \
+          --vmm-args "-accel kvm -accel tcg -smp 2 -nic user,model=e1000"
+
+  netbsd-earmv7hf:
+    name: NetBSD/evbarm-earmv7hf (ARMv7, ILP32)
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+    - uses: actions/checkout@v5
+
+    - name: Install QEMU and anita
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y qemu-system-arm python3-pexpect
+        git clone -q https://github.com/gson1703/anita.git "$RUNNER_TEMP/anita"
+        git -C "$RUNNER_TEMP/anita" checkout -q "$ANITA_COMMIT"
+
+    - name: Build and test in NetBSD/earmv7hf
+      env:
+        ANITA: ${{ runner.temp }}/anita/anita
+      run: |
+        sh ci/anita-run.sh evbarm-earmv7hf \
+          --machine virt \
+          --vmm-args "-smp 2 -device virtio-net-device,netdev=n0 -netdev user,id=n0"
