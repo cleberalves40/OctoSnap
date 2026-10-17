@@ -46,7 +46,7 @@
 
 namespace {
 
-const char *kFssconfig  = "/sbin/fssconfig";
+const char *kFssconfig  = "/usr/sbin/fssconfig";
 const char *kMount      = "/sbin/mount";
 const char *kUmount     = "/sbin/umount";
 const char *kStateDir   = "/var/db/octosnap";

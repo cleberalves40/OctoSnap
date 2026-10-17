@@ -53,7 +53,7 @@ OctoSnap/
 
 ### Separação de privilégios
 
-A interface **nunca roda como root**. Somente o `octosnap-helper` é executado com privilégios, através de `doas` (padrão) ou `sudo -A`. O helper valida todos os argumentos e executa apenas `/sbin/fssconfig`, `/sbin/mount` e `/sbin/umount` via `execv()`, sem shell:
+A interface **nunca roda como root**. Somente o `octosnap-helper` é executado com privilégios, através de `doas` (padrão) ou `sudo -A`. O helper valida todos os argumentos e executa apenas `/usr/sbin/fssconfig`, `/sbin/mount` e `/sbin/umount` via `execv()`, sem shell:
 
 ```text
 octosnap-helper list
