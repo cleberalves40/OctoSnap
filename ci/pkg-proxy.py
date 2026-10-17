@@ -29,11 +29,19 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         rel = self.path[len("/pkgsrc/"):].split("?", 1)[0]
         if ".." in rel.split("/"):
             return self.send_error(400)
+        # A directory requested without the trailing slash (pkg_add asks for
+        # ".../All") must be redirected like the CDN does, or the relative
+        # links in the listing resolve against the parent directory.
+        if rel and not rel.endswith("/") and os.path.isdir(os.path.join(CACHE, rel)):
+            return self.redirect_to_dir()
         # Directory listings are cached too; pkg_add reads them to match versions.
         cached = os.path.join(CACHE, rel if not rel.endswith("/") else rel + "index.html")
         if not os.path.exists(cached):
             try:
                 with urllib.request.urlopen(UPSTREAM + rel, timeout=300) as resp:
+                    if not rel.endswith("/") and resp.geturl().endswith("/"):
+                        os.makedirs(os.path.join(CACHE, rel), exist_ok=True)
+                        return self.redirect_to_dir()
                     os.makedirs(os.path.dirname(cached), exist_ok=True)
                     with open(cached + ".part", "wb") as out:
                         shutil.copyfileobj(resp, out)
@@ -50,6 +58,13 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
         with open(cached, "rb") as f:
             shutil.copyfileobj(f, self.wfile)
+
+    def redirect_to_dir(self):
+        self.send_response(301)
+        host = self.headers.get("Host") or "%s:%d" % self.server.server_address
+        self.send_header("Location", "http://%s%s/" % (host, self.path.split("?", 1)[0]))
+        self.send_header("Content-Length", "0")
+        self.end_headers()
 
     def log_message(self, fmt, *args):
         pass
