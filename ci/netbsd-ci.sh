@@ -39,7 +39,8 @@ fi
 # quarterly mirrors that vmactions images configure lack it on aarch64.
 # Those images also ship older packages (e.g. pcre2) that the repository's
 # Qt6 needs newer: -uu lets pkg_add update such dependencies.
-export PKG_PATH="https://cdn.netbsd.org/pub/pkgsrc/packages/NetBSD/$arch/${release%%.*}.0/All"
+# PKGSRC_MIRROR lets the anita jobs use the host's cache (ci/pkg-proxy.py).
+export PKG_PATH="${PKGSRC_MIRROR:-https://cdn.netbsd.org/pub/pkgsrc}/packages/NetBSD/$arch/${release%%.*}.0/All"
 # When the server drops an HTTPS connection, pkg_add tries to reconnect but
 # can be killed by SIGPIPE first (seen under QEMU user networking). Ignoring
 # SIGPIPE turns that into a write error it recovers from; retries cover the

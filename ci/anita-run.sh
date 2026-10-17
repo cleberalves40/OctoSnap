@@ -16,16 +16,16 @@ release=${NETBSD_RELEASE:-10.2}
 work=${RUNNER_TEMP:-/tmp}/anita-$port
 serve=${RUNNER_TEMP:-/tmp}/serve-$port
 
-# The VM fetches the sources over QEMU user networking, where the host's
-# loopback interface is reachable as 10.0.2.2.
-mkdir -p "$serve"
+# The VM fetches the sources and the pkgsrc packages from the host, which
+# QEMU user networking exposes as 10.0.2.2 (see ci/pkg-proxy.py).
+mkdir -p "$serve" "$serve.cache"
 git archive --format=tar.gz -o "$serve/src.tgz" HEAD
-python3 -m http.server 8000 --bind 127.0.0.1 --directory "$serve" >/dev/null 2>&1 &
+python3 ci/pkg-proxy.py "$serve" "$serve.cache" 8000 &
 server=$!
 trap 'kill $server' EXIT
 
 # anita types the command on the serial console, so it has to stay short.
 python3 "$ANITA" --workdir "$work" --disk-size 16G --memory-size 2G \
 	--run-timeout 10800 "$@" \
-	--run '(dhcpcd -w -q || sleep 15); ftp -o /tmp/s.tgz http://10.0.2.2:8000/src.tgz && mkdir -p /tmp/s && cd /tmp/s && tar -xzf /tmp/s.tgz && sh ci/netbsd-ci.sh' \
+	--run '(dhcpcd -w -q || sleep 15); ftp -o /tmp/s.tgz http://10.0.2.2:8000/src.tgz && mkdir -p /tmp/s && cd /tmp/s && tar -xzf /tmp/s.tgz && PKGSRC_MIRROR=http://10.0.2.2:8000/pkgsrc sh ci/netbsd-ci.sh' \
 	boot "https://cdn.netbsd.org/pub/NetBSD/NetBSD-$release/$port/"
