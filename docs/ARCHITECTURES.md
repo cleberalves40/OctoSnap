@@ -82,6 +82,11 @@ defeitos presentes desde a 0.1.0:
   iniciado em três minutos. Agora o host baixa cada arquivo uma vez e o serve à VM por HTTP
   em `10.0.2.2` ([`ci/pkg-proxy.py`](../ci/pkg-proxy.py)). O tempo caiu para cerca de 8
   minutos no i386 e 12 no earmv7hf. A instalação também ignora SIGPIPE e tenta até três vezes.
+- **Instalação do i386 pelo anita.** A automação do `sysinst` travou uma vez até o timeout de
+  uma hora do anita, e passou em outras execuções com o mesmo código. O disco instalado agora
+  fica em cache (`actions/cache`, salvo só por jobs bem-sucedidos e chaveado pela release e
+  pela versão do anita), e uma instalação que falha é repetida uma vez do zero. O boot com
+  `--run` usa um snapshot efêmero do disco, então a imagem em cache nunca é alterada.
 
 ## Ajustes avaliados e descartados
 

@@ -106,6 +106,14 @@ jobs:
         git clone -q https://github.com/gson1703/anita.git "$RUNNER_TEMP/anita"
         git -C "$RUNNER_TEMP/anita" checkout -q "$ANITA_COMMIT"
 
+    # The installed system disk, so that anita's sysinst automation only
+    # runs when the release or anita changes. Saved only by successful jobs.
+    - name: Cache NetBSD/i386 installation
+      uses: actions/cache@v4
+      with:
+        path: ${{ runner.temp }}/anita-i386
+        key: anita-i386-${{ env.NETBSD_RELEASE }}-${{ env.ANITA_COMMIT }}-v1
+
     - name: Build and test in NetBSD/i386
       env:
         ANITA: ${{ runner.temp }}/anita/anita
@@ -128,6 +136,14 @@ jobs:
         sudo apt-get install -y qemu-system-arm python3-pexpect
         git clone -q https://github.com/gson1703/anita.git "$RUNNER_TEMP/anita"
         git -C "$RUNNER_TEMP/anita" checkout -q "$ANITA_COMMIT"
+
+    # The installed system disk, so that anita's sysinst automation only
+    # runs when the release or anita changes. Saved only by successful jobs.
+    - name: Cache NetBSD/evbarm-earmv7hf installation
+      uses: actions/cache@v4
+      with:
+        path: ${{ runner.temp }}/anita-evbarm-earmv7hf
+        key: anita-evbarm-earmv7hf-${{ env.NETBSD_RELEASE }}-${{ env.ANITA_COMMIT }}-v1
 
     - name: Build and test in NetBSD/earmv7hf
       env:

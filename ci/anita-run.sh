@@ -13,8 +13,14 @@ set -eu
 port=$1
 shift
 release=${NETBSD_RELEASE:-10.2}
+url=https://cdn.netbsd.org/pub/NetBSD/NetBSD-$release/$port/
+# The workflow caches this directory, so a successful install is reused.
 work=${RUNNER_TEMP:-/tmp}/anita-$port
 serve=${RUNNER_TEMP:-/tmp}/serve-$port
+
+anita() {
+	python3 "$ANITA" --workdir "$work" --disk-size 10G --memory-size 2G "$@"
+}
 
 # The VM fetches the sources and the pkgsrc packages from the host, which
 # QEMU user networking exposes as 10.0.2.2 (see ci/pkg-proxy.py).
@@ -24,8 +30,20 @@ python3 ci/pkg-proxy.py "$serve" "$serve.cache" 8000 &
 server=$!
 trap 'kill $server' EXIT
 
-# anita types the command on the serial console, so it has to stay short.
-python3 "$ANITA" --workdir "$work" --disk-size 16G --memory-size 2G \
-	--run-timeout 10800 "$@" \
+# anita's sysinst automation occasionally stalls until its one-hour timeout
+# (seen on i386); retry once from scratch. A no-op when the cache hit.
+for attempt in 1 2; do
+	if anita "$@" install "$url"; then
+		break
+	fi
+	[ "$attempt" -lt 2 ] || exit 1
+	echo "== anita install failed, retrying from scratch"
+	rm -f "$work/wd0.img"
+done
+
+# boot runs on an ephemeral snapshot of the installed disk, which therefore
+# stays clean for the cache. anita types the command on the serial console,
+# so it has to stay short.
+anita "$@" --run-timeout 10800 \
 	--run '(dhcpcd -w -q || sleep 15); ftp -o /tmp/s.tgz http://10.0.2.2:8000/src.tgz && mkdir -p /tmp/s && cd /tmp/s && tar -xzf /tmp/s.tgz && PKGSRC_MIRROR=http://10.0.2.2:8000/pkgsrc sh ci/netbsd-ci.sh' \
-	boot "https://cdn.netbsd.org/pub/NetBSD/NetBSD-$release/$port/"
+	boot "$url"
