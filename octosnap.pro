@@ -4,7 +4,7 @@ CONFIG += c++17
 TARGET = octosnap
 TEMPLATE = app
 
-DEFINES += OCTOSNAP_VERSION=\\\"0.2.0\\\"
+DEFINES += OCTOSNAP_VERSION=\\\"0.2.1\\\"
 
 SOURCES += \
     src/main.cpp \

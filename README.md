@@ -149,9 +149,13 @@ visudo -f /etc/sudoers.d/octosnap
 - O branch `main` é sempre compilável; mudanças entram via *pull request*.
 - Todo push e PR para `main` executa o workflow **Build & Test**:
   - **Ubuntu / Qt 6.7**: compila a GUI com Clang (verificação rápida de portabilidade).
-  - **NetBSD (VM)**: compila a GUI e o `octosnap-helper` com os pacotes Qt6 do pkgsrc.
+  - **NetBSD 10.2**, um job por arquitetura — **amd64**, **aarch64**, **i386** e **earmv7hf** (ARMv7):
+    compila a GUI e o `octosnap-helper` com o toolchain do sistema e os pacotes Qt6 do pkgsrc e
+    executa [`tests/netbsd-e2e.sh`](tests/netbsd-e2e.sh), um teste ponta a ponta do helper contra
+    um dispositivo `fss(4)` real. Detalhes e problemas conhecidos por arquitetura em
+    [docs/ARCHITECTURES.md](docs/ARCHITECTURES.md).
 - Releases são marcadas com tags `X.Y.Z` (ex.: `0.1.1`), que o `netbsd/Makefile` usa para baixar o código (`GITHUB_TAG`).
-- Para uma nova versão: altere `project(... VERSION ...)` no `CMakeLists.txt` e `DISTNAME` no `netbsd/Makefile` (o CI verifica se coincidem), registre as mudanças no [CHANGELOG.md](CHANGELOG.md), faça o merge e crie a tag.
+- Para uma nova versão: altere `project(... VERSION ...)` no `CMakeLists.txt`, `DISTNAME` no `netbsd/Makefile` e `OCTOSNAP_VERSION` no `octosnap.pro` (o CI verifica se coincidem), registre as mudanças no [CHANGELOG.md](CHANGELOG.md), faça o merge e crie a tag.
 
 ---
 
