@@ -34,16 +34,14 @@ if [ ! -e /usr/X11R7/lib/libxcb.so ]; then
 	done
 fi
 
-# Images that already carry packages (vmactions) set PKG_PATH in
-# /etc/pkg_install.conf to the pkgsrc branch those packages came from;
-# overriding it makes pkg_add fail on dependency versions (e.g. pcre2).
-# Freshly installed systems (anita) have no PKG_PATH and no packages.
-if ! grep -q '^PKG_PATH=' /etc/pkg_install.conf 2>/dev/null; then
-	# Binary packages are published per major release (10.0 covers 10.x).
-	export PKG_PATH="https://cdn.netbsd.org/pub/pkgsrc/packages/NetBSD/$arch/${release%%.*}.0/All"
-fi
+# Always use the main binary repository: it is published per major release
+# (10.0 covers 10.x) and is the one carrying Qt6 for all four ports; the
+# quarterly mirrors that vmactions images configure lack it on aarch64.
+# Those images also ship older packages (e.g. pcre2) that the repository's
+# Qt6 needs newer: -uu lets pkg_add update such dependencies.
+export PKG_PATH="https://cdn.netbsd.org/pub/pkgsrc/packages/NetBSD/$arch/${release%%.*}.0/All"
 for pkg in cmake ninja-build qt6-qtbase qt6-qttools; do
-	pkg_info -qe "$pkg" || pkg_add "$pkg"
+	pkg_info -qe "$pkg" || pkg_add -uu "$pkg"
 done
 
 echo "== toolchain"
