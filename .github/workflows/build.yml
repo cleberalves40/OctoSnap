@@ -132,7 +132,9 @@ jobs:
     - name: Build and test in NetBSD/earmv7hf
       env:
         ANITA: ${{ runner.temp }}/anita/anita
+      # anita checks that its vexpress-a15 DTB exists even though the virt
+      # machine generates its own device tree; /dev/null satisfies the check.
       run: |
         sh ci/anita-run.sh evbarm-earmv7hf \
-          --machine virt \
+          --machine virt --dtb /dev/null \
           --vmm-args "-smp 2 -device virtio-net-device,netdev=n0 -netdev user,id=n0"
