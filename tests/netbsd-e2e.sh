@@ -50,7 +50,8 @@ fssconfig -l >/dev/null || fail "fss(4) is not available"
 step "scratch FFS on $vnd"
 dd if=/dev/zero of="$work/fs.img" bs=1m count=64 2>/dev/null
 vnconfig "$vnd" "$work/fs.img"
-newfs -O 2 "/dev/r$vnd$part" >/dev/null
+# -I: the unlabeled vnd has no 4.2BSD partition type for newfs to check.
+newfs -I -O 2 "/dev/r$vnd$part" >/dev/null
 mkdir "$live" "$ro" "$work/outside"
 mount -t ffs "/dev/$vnd$part" "$live"
 
