@@ -34,20 +34,17 @@ if [ ! -e /usr/X11R7/lib/libxcb.so ]; then
 	done
 fi
 
-# Images that already carry packages (vmactions) configure pkgin for the
-# pkgsrc branch those packages came from; pkg_add against another branch
-# fails on dependency versions (e.g. pcre2), so let pkgin resolve them.
-# Freshly installed systems (anita) have neither packages nor pkgin.
-pkgs="cmake ninja-build qt6-qtbase qt6-qttools"
-if command -v pkgin >/dev/null 2>&1; then
-	pkgin -y install $pkgs
-else
+# Images that already carry packages (vmactions) set PKG_PATH in
+# /etc/pkg_install.conf to the pkgsrc branch those packages came from;
+# overriding it makes pkg_add fail on dependency versions (e.g. pcre2).
+# Freshly installed systems (anita) have no PKG_PATH and no packages.
+if ! grep -q '^PKG_PATH=' /etc/pkg_install.conf 2>/dev/null; then
 	# Binary packages are published per major release (10.0 covers 10.x).
 	export PKG_PATH="https://cdn.netbsd.org/pub/pkgsrc/packages/NetBSD/$arch/${release%%.*}.0/All"
-	for pkg in $pkgs; do
-		pkg_info -qe "$pkg" || pkg_add "$pkg"
-	done
 fi
+for pkg in cmake ninja-build qt6-qtbase qt6-qttools; do
+	pkg_info -qe "$pkg" || pkg_add "$pkg"
+done
 
 echo "== toolchain"
 c++ --version | head -1
